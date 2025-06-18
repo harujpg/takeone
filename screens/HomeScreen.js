@@ -1,85 +1,75 @@
-// screens/HomeScreen.js
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { Text, FlatList, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getPopularMovies } from '../services/tmdb';
 import { colors } from '../constants/theme';
 
 export default function HomeScreen({ navigation }) {
-  const [movies, setMovies] = useState([]);
+  const [popular, setPopular] = useState([]);
 
   useEffect(() => {
-    async function fetchMovies() {
-      const data = await getPopularMovies();
-      setMovies(data);
+    async function loadMovies() {
+      const pop = await getPopularMovies();
+      setPopular(pop);
     }
-    fetchMovies();
+    loadMovies();
   }, []);
 
-  const renderItem = ({ item }) => (
+  const renderMovie = ({ item }) => (
     <TouchableOpacity
-      style={styles.card}
       onPress={() => navigation.navigate('MovieDetail', { movieId: item.id })}
+      style={styles.movieContainer}
     >
       <Image
-        source={{ uri: `https://image.tmdb.org/t/p/w200${item.poster_path}` }}
+        source={{ uri: `https://image.tmdb.org/t/p/w300${item.poster_path}` }}
         style={styles.poster}
       />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>Lançamento: {item.release_date}</Text>
-      </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Filmes Populares</Text>
-      <FlatList
-        data={movies}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionTitle}>🎬 Filmes Populares</Text>
+        <FlatList
+          data={popular}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderMovie}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 16,
   },
-  header: {
-    fontSize: 26,
-    fontWeight: 'bold',
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 100, // evita sobreposição com a TabBar
+  },
+  sectionTitle: {
     color: colors.primary,
-    marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginLeft: 16,
+    marginBottom: 10,
   },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 12,
-    alignItems: 'center',
+  list: {
+    paddingLeft: 16,
   },
-  poster: {
-    width: 80,
-    height: 120,
-    borderRadius: 10,
+  movieContainer: {
     marginRight: 12,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: colors.accent,
-    fontSize: 14,
+  poster: {
+    width: 120,
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#222',
   },
 });
