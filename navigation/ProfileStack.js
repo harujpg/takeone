@@ -1,16 +1,73 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ProfileScreen from '../screens/ProfileScreen';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { supabase } from '../services/supabase';
+import { colors } from '../constants/theme';
 
-const Stack = createNativeStackNavigator();
+export default function ProfileScreen() {
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
 
-export default function ProfileStack() {
+    if (error) {
+      Alert.alert('Erro ao sair', error.message);
+    } else {
+      // Redirecionamento automático já ocorre no App.js (por causa do setSession)
+      Alert.alert('Deslogado', 'Você saiu da conta com sucesso.');
+    }
+  };
+
+  const user = supabase.auth.getUser();
+
   return (
-    <Stack.Navigator screenOptions={{
-      headerStyle: { backgroundColor: '#0D0D0D' },
-      headerTintColor: '#FFFFFF',
-    }}>
-      <Stack.Screen name="ProfileScreen" component={ProfileScreen} options={{ title: 'Seu Perfil' }} />
-    </Stack.Navigator>
+    <View style={styles.container}>
+      <Text style={styles.title}>Perfil</Text>
+
+      <Text style={styles.emailLabel}>Usuário logado:</Text>
+      <Text style={styles.email}>{user?.email || 'carregando...'}</Text>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Sair da conta</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 26,
+    color: colors.primary,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  emailLabel: {
+    color: colors.text,
+    fontSize: 16,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  email: {
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  logoutButton: {
+    backgroundColor: '#ff5555',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginHorizontal: 20,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+});
