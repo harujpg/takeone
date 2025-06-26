@@ -13,7 +13,7 @@ export default function SignUpScreen({ navigation }) {
     if (error) {
       Alert.alert('Erro ao cadastrar', error.message);
     } else {
-      Alert.alert('Conta criada!', 'Verifique seu e-mail para confirmar.');
+      // Conta criada com sucesso - verifique seu e-mail para confirmar
       navigation.navigate('Login');
     }
   };

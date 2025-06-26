@@ -1,186 +1,231 @@
-import React, { useEffect, useState } from 'react';
-import { Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, View, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Image, 
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getMovieDetails, getMovieCredits, getWatchProviders } from '../services/tmdb';
-import { colors } from '../constants/theme';
-import { supabase, saveRating, getAverageRating, getUserRating } from '../services/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function MovieDetailScreen({ route }) {
+// Imports locais
+import { colors, spacing, borderRadius, typography } from '../constants/theme';
+import { getAverageRating, getUserRating, saveRating } from '../services/supabase';
+import { getMovieDetails } from '../services/tmdb';
+import { supabase } from '../services/supabase';
+
+import GradientBackground from '../components/GradientBackground';
+import LoadingSpinner from '../components/LoadingSpinner';
+import MoviePoster from '../components/MoviePoster';
+import MovieInfo from '../components/MovieInfo';
+import RatingSection from '../components/RatingSection';
+import CommentsSection from '../components/CommentsSection';
+import ActionButtons from '../components/ActionButtons';
+
+const { width } = Dimensions.get('window');
+
+export default function MovieDetailScreen({ route, navigation }) {
   const { movieId } = route.params;
   const [movie, setMovie] = useState(null);
-  const [cast, setCast] = useState([]);
-  const [providers, setProviders] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [averageRating, setAverageRating] = useState(0);
   const [userRating, setUserRating] = useState(null);
+  const [averageRating, setAverageRating] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    async function loadDetails() {
-      const details = await getMovieDetails(movieId);
-      const elenco = await getMovieCredits(movieId);
-      const provedores = await getWatchProviders(movieId);
-      setMovie(details);
-      setCast(elenco);
-      setProviders(provedores);
-      setLoading(false);
+    checkUser();
+    loadMovieDetails();
+  }, []);
 
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
-
-      const avg = await getAverageRating(movieId);
-      setAverageRating(avg?.toFixed(1));
-
-      if (userId) {
-        const userRated = await getUserRating(userId, movieId);
-        setUserRating(userRated);
-      }
+  useEffect(() => {
+    if (user !== null) {
+      loadUserRating();
     }
-    loadDetails();
-  }, [movieId]);
+  }, [user]);
 
-  const handleRateMovie = async (value) => {
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
 
-    if (!userId) {
-      Alert.alert('Erro', 'Você precisa estar logado para avaliar.');
+  const loadMovieDetails = async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar detalhes do filme
+      const movieData = await getMovieDetails(movieId);
+      setMovie(movieData);
+
+      // Buscar média de avaliações
+      const avgRating = await getAverageRating(movieId);
+      setAverageRating(avgRating);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes do filme:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUserRating = async () => {
+    try {
+      if (user) {
+        const userRatingData = await getUserRating(user.id, movieId);
+        setUserRating(userRatingData);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar avaliação do usuário:', error);
+    }
+  };
+
+  const handleRatingChange = async (rating) => {
+    if (!user) {
+      Alert.alert('Erro', 'Você precisa estar logado para avaliar filmes.');
       return;
     }
 
     try {
-      await saveRating(userId, movieId, value);
-      setUserRating(value);
-      const avg = await getAverageRating(movieId);
-      setAverageRating(avg?.toFixed(1));
-      Alert.alert('Sucesso', `Você avaliou com ${value} estrela${value > 1 ? 's' : ''}.`);
+      await saveRating(user.id, movieId, rating);
+      setUserRating(rating);
+      
+      // Recalcular média
+      const newAvgRating = await getAverageRating(movieId);
+      setAverageRating(newAvgRating);
+      
+      // Feedback de sucesso
+      Alert.alert('Sucesso', `Avaliação de ${rating} estrelas salva com sucesso!`);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar a avaliação.');
+      console.error('Erro ao salvar avaliação:', error);
+      Alert.alert('Erro', 'Não foi possível salvar sua avaliação. Tente novamente.');
     }
   };
 
-  if (loading || !movie) {
+  const handleAddToList = () => {
+    // Recarregar dados se necessário
+    loadMovieDetails();
+  };
+
+  if (loading) {
+    return <LoadingSpinner message="Carregando filme..." />;
+  }
+
+  if (!movie) {
     return (
-      <SafeAreaView style={styles.loader}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </SafeAreaView>
+      <GradientBackground>
+        <SafeAreaView style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={64} color={colors.error} />
+          <Text style={styles.errorTitle}>Filme não encontrado</Text>
+          <Text style={styles.errorSubtitle}>
+            Não foi possível carregar os detalhes deste filme.
+          </Text>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Image
-          source={{ uri: `https://image.tmdb.org/t/p/w500${movie.poster_path}` }}
-          style={styles.poster}
-        />
-
-        <Text style={styles.title}>{movie.title}</Text>
-
-        <Text style={styles.subtitle}>Média dos usuários:</Text>
-        <Text style={styles.text}>⭐ {averageRating || 'N/A'}</Text>
-
-        {userRating && (
-          <>
-            <Text style={styles.subtitle}>Sua avaliação:</Text>
-            <Text style={styles.text}>⭐ {userRating}</Text>
-          </>
-        )}
-
-        <View style={styles.ratingRow}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity key={star} onPress={() => handleRateMovie(star)}>
-              <Text style={styles.star}>⭐</Text>
+    <GradientBackground>
+      <SafeAreaView style={styles.container}>
+        <ScrollView 
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Header com botão voltar */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-          ))}
-        </View>
+          </View>
 
-        <Text style={styles.subtitle}>Gêneros:</Text>
-        <Text style={styles.text}>{movie.genres.map(g => g.name).join(', ')}</Text>
+          {/* Poster e informações principais */}
+          <View style={styles.mainContent}>
+            <MoviePoster movie={movie} />
+            <MovieInfo movie={movie} averageRating={averageRating} />
+          </View>
 
-        <Text style={styles.subtitle}>Sinopse:</Text>
-        <Text style={styles.text}>{movie.overview}</Text>
+          {/* Seção de avaliação */}
+          <View style={styles.section}>
+            <RatingSection
+              userRating={userRating}
+              averageRating={averageRating}
+              onRatingChange={handleRatingChange}
+              user={user}
+            />
+          </View>
 
-        <Text style={styles.subtitle}>Elenco principal:</Text>
-        <Text style={styles.text}>{cast.map(c => c.name).join(', ')}</Text>
+          {/* Botões de ação */}
+          <View style={styles.section}>
+            <ActionButtons movie={movie} onAddToList={handleAddToList} />
+          </View>
 
-        {providers.length > 0 && (
-          <>
-            <Text style={styles.subtitle}>Disponível em:</Text>
-            <Text style={styles.text}>{providers.map(p => p.provider_name).join(', ')}</Text>
-          </>
-        )}
-
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>➕ Adicionar à Lista</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Seção de comentários */}
+          <View style={styles.section}>
+            <CommentsSection movieId={movieId} user={user} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 50,
+    paddingBottom: spacing.xl,
   },
-  poster: {
-    width: '100%',
-    height: 400,
-    borderRadius: 12,
-    marginBottom: 20,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: 'rgba(15, 15, 35, 0.8)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 12,
+  backButton: {
+    backgroundColor: colors.card,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginTop: 12,
+  mainContent: {
+    padding: spacing.lg,
   },
-  text: {
-    fontSize: 16,
-    color: colors.text,
-    marginTop: 4,
+  section: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  loader: {
+  errorContainer: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.xl,
   },
-  buttonGroup: {
-    marginTop: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  errorTitle: {
+    ...typography.h3,
+    color: colors.text,
+    textAlign: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 10,
-  },
-  star: {
-    fontSize: 32,
-    marginHorizontal: 4,
+  errorSubtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

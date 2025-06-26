@@ -10,8 +10,7 @@ export default function ProfileScreen() {
     if (error) {
       Alert.alert('Erro ao sair', error.message);
     } else {
-      // Redirecionamento automático já ocorre no App.js (por causa do setSession)
-      Alert.alert('Deslogado', 'Você saiu da conta com sucesso.');
+      // Logout realizado com sucesso - navegação automática acontece no App.js
     }
   };
 

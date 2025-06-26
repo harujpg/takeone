@@ -13,13 +13,15 @@ const tmdb = axios.create({
 });
 
 // Filmes populares
-export const getPopularMovies = async () => {
+export const getPopularMovies = async (page = 1) => {
   try {
-    const response = await tmdb.get('/movie/popular');
-    return response.data.results;
+    const response = await tmdb.get('/movie/popular', {
+      params: { page }
+    });
+    return response.data;
   } catch (error) {
     console.error('Erro ao buscar filmes populares:', error);
-    return [];
+    return { results: [], total_pages: 0, total_results: 0 };
   }
 };
 
@@ -53,5 +55,64 @@ export const getWatchProviders = async (movieId) => {
   } catch (error) {
     console.error('Erro ao buscar provedores de exibição:', error);
     return [];
+  }
+};
+
+// Buscar filmes
+export const searchMovies = async (query, page = 1) => {
+  try {
+    const response = await tmdb.get('/search/movie', {
+      params: { 
+        query,
+        page
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar filmes:', error);
+    return { results: [], total_pages: 0, total_results: 0 };
+  }
+};
+
+// Filmes por gênero
+export const getMoviesByGenre = async (genreId, page = 1) => {
+  try {
+    const response = await tmdb.get('/discover/movie', {
+      params: {
+        with_genres: genreId,
+        page
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar filmes por gênero:', error);
+    return { results: [], total_pages: 0, total_results: 0 };
+  }
+};
+
+// Lista de gêneros
+export const getGenres = async () => {
+  try {
+    const response = await tmdb.get('/genre/movie/list');
+    return response.data.genres;
+  } catch (error) {
+    console.error('Erro ao buscar gêneros:', error);
+    return [];
+  }
+};
+
+// Filmes por ano
+export const getMoviesByYear = async (year, page = 1) => {
+  try {
+    const response = await tmdb.get('/discover/movie', {
+      params: {
+        primary_release_year: year,
+        page
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar filmes por ano:', error);
+    return { results: [], total_pages: 0, total_results: 0 };
   }
 };

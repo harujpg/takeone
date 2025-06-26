@@ -13,9 +13,7 @@ export default function LoginScreen({ navigation }) {
     if (error) {
       Alert.alert('Erro ao entrar', error.message);
     } else {
-      Alert.alert('Sucesso', 'Login realizado com sucesso!');
-      // Aqui você pode navegar para a Home ou salvar sessão
-      // navigation.replace('HomeStack');
+      // Login realizado com sucesso - navegação automática acontece no App.js
     }
   };
 
