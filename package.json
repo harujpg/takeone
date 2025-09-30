@@ -17,6 +17,7 @@
     "@supabase/supabase-js": "^2.50.2",
     "axios": "^1.10.0",
     "expo": "~53.0.11",
+    "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "^14.1.5",
     "expo-status-bar": "~2.2.3",
     "lottie-react-native": "^7.2.2",
@@ -25,7 +26,8 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.11.1"
+    "react-native-screens": "~4.11.1",
+    "expo-image-manipulator": "~13.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
