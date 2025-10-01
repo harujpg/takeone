@@ -9,8 +9,8 @@ import {
   View,
   ActivityIndicator
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getPopularMovies } from '../services/tmdb';
 import { colors, spacing, borderRadius, typography } from '../constants/theme';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -114,19 +114,28 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <GradientBackground>
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
+      <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={() => navigation.openDrawer()}
+          >
+            <Ionicons name="menu" size={24} color={colors.primary} />
+          </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.sectionTitle}>🎬 Filmes Populares</Text>
+            <View style={styles.titleContainer}>
+              <Text style={styles.sectionTitle}>🎬 Filmes Populares</Text>
+              <View style={styles.statusIndicator} />
+            </View>
             <TouchableOpacity 
               style={styles.searchButton}
               onPress={() => navigation.navigate('Search')}
             >
-              <Ionicons name="search" size={24} color={colors.primary} />
+              <Ionicons name="search" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
-        </View>
-        
+      </View>
+      
+      <SafeAreaView style={styles.safe} edges={['bottom']}>
         <FlatList
           data={popular}
           keyExtractor={(item) => item.id.toString()}
@@ -158,28 +167,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: 50, // Espaço para status bar
+    paddingBottom: spacing.sm,
     backgroundColor: 'rgba(15, 15, 35, 0.8)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 80,
+  },
+  menuButton: {
+    padding: spacing.sm,
+    marginRight: spacing.md,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flex: 1,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    opacity: 0.7,
   },
   sectionTitle: {
-    ...typography.h2,
+    fontSize: 18,
     color: colors.text,
-    flex: 1,
+    fontWeight: 'bold',
+    flexShrink: 1,
   },
   searchButton: {
     backgroundColor: colors.card,
-    padding: spacing.sm,
+    padding: spacing.xs,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   listContainer: {
     padding: spacing.lg,

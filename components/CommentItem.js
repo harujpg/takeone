@@ -37,7 +37,10 @@ export default function CommentItem({ comment }) {
   return (
     <View style={styles.commentBox}>
       <View style={styles.commentHeader}>
-        <TouchableOpacity style={styles.authorRow} onPress={() => navigation.navigate('PublicProfile', { userId: comment.user_id })}>
+        <TouchableOpacity style={styles.authorRow} onPress={() => {
+          console.log('CommentItem: Navegando para perfil do usuário:', comment.user_id);
+          navigation.navigate('Perfil', { screen: 'PublicProfile', params: { userId: comment.user_id } });
+        }}>
           <View style={styles.avatarCircle}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />

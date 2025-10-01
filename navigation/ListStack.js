@@ -9,12 +9,11 @@ const Stack = createNativeStackNavigator();
 export default function ListStack() {
   return (
     <Stack.Navigator screenOptions={{
-      headerStyle: { backgroundColor: '#0D0D0D' },
-      headerTintColor: '#FFFFFF',
+      headerShown: false,
     }}>
-      <Stack.Screen name="ListScreen" component={ListScreen} options={{ title: 'Minhas Listas' }} />
-      <Stack.Screen name="ListDetail" component={ListDetailScreen} options={{ title: 'Detalhes da Lista' }} />
-      <Stack.Screen name="CreateList" component={CreateListScreen} options={{ title: 'Criar Lista' }} />
+      <Stack.Screen name="ListScreen" component={ListScreen} />
+      <Stack.Screen name="ListDetail" component={ListDetailScreen} />
+      <Stack.Screen name="CreateList" component={CreateListScreen} />
     </Stack.Navigator>
   );
 }

@@ -9,12 +9,11 @@ const Stack = createNativeStackNavigator();
 export default function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{
-      headerStyle: { backgroundColor: '#0D0D0D' },
-      headerTintColor: '#FFFFFF',
+      headerShown: false,
     }}>
-      <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ title: 'Início' }} />
-      <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ title: 'Detalhes do Filme' }} />
-      <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'Buscar Filmes' }} />
+      <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      <Stack.Screen name="MovieDetail" component={MovieDetailScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
     </Stack.Navigator>
   );
 }

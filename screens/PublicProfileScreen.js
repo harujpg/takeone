@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { colors } from '../constants/theme';
-import { getProfile, getSignedAvatarUrl } from '../services/profiles';
+import { getProfile, getSignedAvatarUrl, testProfilesTable, checkUserExists } from '../services/profiles';
+import { useNavigation } from '@react-navigation/native';
 
 export default function PublicProfileScreen({ route }) {
+  const navigation = useNavigation();
   const { userId } = route.params;
   const [profile, setProfile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -12,12 +14,25 @@ export default function PublicProfileScreen({ route }) {
   useEffect(() => {
     (async () => {
       try {
+        console.log('PublicProfileScreen: Buscando perfil para userId:', userId);
+        
+        // Primeiro, vamos testar se a tabela profiles existe
+        const tableExists = await testProfilesTable();
+        if (!tableExists) {
+          console.error('PublicProfileScreen: Tabela profiles não existe ou não é acessível');
+          setProfile(null);
+          return;
+        }
+        
         const p = await getProfile(userId);
+        console.log('PublicProfileScreen: Perfil encontrado:', p);
         setProfile(p);
         if (p?.avatar_path) {
           const url = await getSignedAvatarUrl(p.avatar_path);
           setAvatarUrl(url);
         }
+      } catch (error) {
+        console.error('PublicProfileScreen: Erro ao buscar perfil:', error);
       } finally {
         setLoading(false);
       }
@@ -36,12 +51,32 @@ export default function PublicProfileScreen({ route }) {
     return (
       <View style={styles.center}>
         <Text style={styles.text}>Perfil não encontrado</Text>
+        <Text style={styles.errorText}>ID do usuário: {userId}</Text>
+        <Text style={styles.errorText}>Este usuário não possui um perfil no sistema.</Text>
+        <Text style={styles.errorText}>O usuário pode ter comentado antes de ter um perfil criado.</Text>
+        <Text style={styles.errorText}>Verifique os logs para mais detalhes sobre o erro.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <View style={styles.navigationButtons}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>← Voltar</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('Perfil', { screen: 'ProfileHome' })}
+        >
+          <Text style={styles.profileButtonText}>Meu Perfil</Text>
+        </TouchableOpacity>
+      </View>
+      
       <View style={styles.header}>
         <View style={styles.avatarCircle}>
           {avatarUrl ? (
@@ -63,6 +98,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: 16,
+  },
+  navigationButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 12,
+  },
+  backButton: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: colors.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  profileButton: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  profileButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   center: {
     flex: 1,
@@ -102,6 +171,12 @@ const styles = StyleSheet.create({
   },
   text: {
     color: colors.text,
+  },
+  errorText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
 

@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '../services/supabase';
 import { colors } from '../constants/theme';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { syncCurrentUserProfile, migrateAllUsersToProfiles } from '../services/profiles';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -20,6 +22,7 @@ export default function ProfileScreen() {
   const [tempAvatarPreviewUrl, setTempAvatarPreviewUrl] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [signedAvatarUrl, setSignedAvatarUrl] = useState('');
+  const [migrationExecuted, setMigrationExecuted] = useState(false);
 
 
   useEffect(() => {
@@ -29,10 +32,33 @@ export default function ProfileScreen() {
         const { data } = await supabase.auth.getUser();
         if (isMounted) {
           setUser(data?.user ?? null);
+          setLoading(false);
+          
+          // Executa sincronização e migração em background (não bloqueia a UI)
+          if (data?.user) {
+            setTimeout(async () => {
+              try {
+                console.log('ProfileScreen: Sincronizando perfil do usuário...');
+                await syncCurrentUserProfile();
+                
+                // Executa migração de todos os usuários (apenas uma vez por sessão)
+                if (!migrationExecuted) {
+                  console.log('ProfileScreen: Executando migração de usuários...');
+                  const migrationResult = await migrateAllUsersToProfiles();
+                  if (migrationResult) {
+                    console.log('ProfileScreen: Migração concluída:', migrationResult);
+                  }
+                  setMigrationExecuted(true);
+                }
+              } catch (error) {
+                console.error('ProfileScreen: Erro na sincronização/migração:', error);
+                // Não quebra a navegação se a sincronização falhar
+              }
+            }, 1000); // Executa após 1 segundo
+          }
         }
       } catch (error) {
-        // Silencia erro e mantém UI funcional
-      } finally {
+        console.error('ProfileScreen: Erro ao carregar usuário:', error);
         if (isMounted) {
           setLoading(false);
         }
@@ -180,7 +206,18 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Perfil</Text>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => navigation.openDrawer()}
+        >
+          <Ionicons name="menu" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Perfil</Text>
+          <View style={styles.statusIndicator} />
+        </View>
+      </View>
 
       {loading ? (
         <View style={styles.loadingRow}>
@@ -332,6 +369,10 @@ export default function ProfileScreen() {
                     const updates = { data: { full_name: tempName?.trim() || null, avatar_path: tempAvatarPath || user?.user_metadata?.avatar_path || null } };
                     const { error } = await supabase.auth.updateUser(updates);
                     if (error) throw error;
+                    
+                    // Sincroniza com a tabela profiles
+                    console.log('ProfileScreen: Sincronizando perfil após atualização...');
+                    await syncCurrentUserProfile();
 
                     // Se o usuário está substituindo o avatar e existia um antigo salvo, remove o antigo
                     if (tempAvatarPath && user?.user_metadata?.avatar_path && tempAvatarPath !== user.user_metadata.avatar_path) {
@@ -446,12 +487,36 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 50, // Espaço para status bar
+    paddingHorizontal: 20,
+    minHeight: 80,
+  },
+  menuButton: {
+    padding: 8,
+    marginRight: 16,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
   title: {
-    fontSize: 26,
+    fontSize: 20,
     color: colors.primary,
     fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
+    flexShrink: 1,
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    opacity: 0.7,
   },
   headerRow: {
     flexDirection: 'row',

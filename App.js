@@ -1,45 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, StatusBar } from 'react-native';
 import { supabase } from './services/supabase';
 import AuthStack from './navigation/AuthStack';
-import HomeStack from './navigation/HomeStack';
-import ProfileStack from './navigation/ProfileStack';
-import ListStack from './navigation/ListStack';
+import DrawerNavigator from './navigation/DrawerNavigator';
 import { colors } from './constants/theme';
-
-const Tab = createBottomTabNavigator();
-
-function MainTabs() {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          const icons = {
-            Home: 'home',
-            Perfil: 'person',
-            Listas: 'list',
-          };
-          return <Ionicons name={icons[route.name]} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: 'gray',
-        tabBarStyle: { 
-          backgroundColor: colors.background,
-          borderTopColor: '#333',
-          borderTopWidth: 1,
-        },
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Perfil" component={ProfileStack} />
-      <Tab.Screen name="Listas" component={ListStack} />
-    </Tab.Navigator>
-  );
-}
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -72,9 +37,16 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      {session ? <MainTabs /> : <AuthStack />}
-    </NavigationContainer>
+    <>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="transparent" 
+        translucent={true}
+      />
+      <NavigationContainer>
+        {session ? <DrawerNavigator /> : <AuthStack />}
+      </NavigationContainer>
+    </>
   );
 }
 
