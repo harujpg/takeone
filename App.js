@@ -5,6 +5,8 @@ import { supabase } from './services/supabase';
 import AuthStack from './navigation/AuthStack';
 import DrawerNavigator from './navigation/DrawerNavigator';
 import { colors } from './constants/theme';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -30,31 +32,30 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{
+        flex: 1,
+        backgroundColor: '#0F0F23',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
+        <ActivityIndicator size="large" color="#6366F1" />
       </View>
     );
   }
 
   return (
-    <>
-      <StatusBar 
-        barStyle="light-content" 
-        backgroundColor="transparent" 
-        translucent={true}
-      />
-      <NavigationContainer>
-        {session ? <DrawerNavigator /> : <AuthStack />}
-      </NavigationContainer>
-    </>
+    <SettingsProvider>
+      <ThemeProvider>
+        <StatusBar 
+          barStyle="light-content" 
+          backgroundColor="transparent" 
+          translucent={true}
+        />
+        <NavigationContainer>
+          {session ? <DrawerNavigator /> : <AuthStack />}
+        </NavigationContainer>
+      </ThemeProvider>
+    </SettingsProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

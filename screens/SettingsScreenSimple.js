@@ -6,6 +6,14 @@ import { colors } from '../constants/theme';
 
 export default function SettingsScreenSimple() {
   const navigation = useNavigation();
+  
+  // Usando cores estáticas para esta tela simples
+  const staticColors = {
+    background: '#0F0F23',
+    text: '#F8FAFC',
+    primary: '#6366F1',
+    card: '#16213E',
+  };
 
   return (
     <View style={styles.container}>
@@ -14,7 +22,7 @@ export default function SettingsScreenSimple() {
           style={styles.menuButton}
           onPress={() => navigation.openDrawer()}
         >
-          <Ionicons name="menu" size={24} color={colors.primary} />
+          <Ionicons name="menu" size={24} color="#6366F1" />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Configurações</Text>
@@ -33,7 +41,7 @@ export default function SettingsScreenSimple() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#0F0F23',
   },
   header: {
     flexDirection: 'row',
@@ -58,14 +66,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#F8FAFC',
     flexShrink: 1,
   },
   statusIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: '#6366F1',
     marginLeft: 8,
   },
   content: {
@@ -77,12 +85,12 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#F8FAFC',
     marginBottom: 10,
   },
   subtext: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: '#94A3B8',
     textAlign: 'center',
   },
 });

@@ -13,27 +13,196 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
-import { colors, spacing, typography } from '../constants/theme';
+import { useSettings } from '../contexts/SettingsContext';
+import { spacing } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
+  const { settings, updateSetting, triggerHaptic, playSound } = useSettings();
+  const { colors, typography } = useTheme();
   const [user, setUser] = useState(null);
-  const [settings, setSettings] = useState({
-    darkMode: true,
-    notifications: true,
-    autoPlay: false,
-    highContrast: false,
-    largeText: false,
-    soundEffects: true,
-    hapticFeedback: true,
-    dataSaver: false,
-    locationServices: false,
-    analytics: true,
+
+  // Estilos dinâmicos baseados no tema
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: 50,
+      paddingHorizontal: 20,
+      paddingBottom: 8,
+      backgroundColor: 'rgba(15, 15, 35, 0.8)',
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+      minHeight: 80,
+    },
+    menuButton: {
+      padding: 8,
+      marginRight: 16,
+    },
+    titleContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
+      flexShrink: 1,
+    },
+    statusIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+      marginLeft: 8,
+    },
+    content: {
+      flex: 1,
+    },
+    section: {
+      marginTop: 24,
+      paddingHorizontal: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 16,
+      paddingLeft: 4,
+    },
+    settingItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    settingIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: 'rgba(99, 102, 241, 0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    settingContent: {
+      flex: 1,
+    },
+    settingTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    settingSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    switch: {
+      marginLeft: 12,
+    },
+    rightComponent: {
+      marginLeft: 12,
+    },
+    userInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 8,
+    },
+    avatar: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    avatarText: {
+      color: '#fff',
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    userDetails: {
+      flex: 1,
+    },
+    userName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    userEmail: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    settingLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    iconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    destructiveIcon: {
+      backgroundColor: 'rgba(255, 85, 85, 0.1)',
+    },
+    settingText: {
+      flex: 1,
+    },
+    destructiveText: {
+      color: '#ff5555',
+    },
+    versionText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    logoutSection: {
+      marginTop: 32,
+      paddingHorizontal: 24,
+    },
+    logoutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#ff5555',
+      padding: 16,
+      borderRadius: 12,
+      gap: 8,
+    },
+    logoutButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    bottomSpacing: {
+      height: 32,
+    },
   });
 
   useEffect(() => {
     loadUser();
-    loadSettings();
   }, []);
 
   const loadUser = async () => {
@@ -43,17 +212,6 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
     }
-  };
-
-  const loadSettings = async () => {
-    // Aqui você pode carregar configurações salvas do AsyncStorage ou Supabase
-    // Por enquanto, usando valores padrão
-  };
-
-  const saveSettings = async (newSettings) => {
-    setSettings(newSettings);
-    // Aqui você pode salvar no AsyncStorage ou Supabase
-    console.log('Configurações salvas:', newSettings);
   };
 
   const handleLogout = async () => {
@@ -203,7 +361,11 @@ export default function SettingsScreen() {
             title="Alto Contraste"
             subtitle="Melhora a legibilidade do texto"
             value={settings.highContrast}
-            onValueChange={(value) => saveSettings({ ...settings, highContrast: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('highContrast', value);
+            }}
           />
           
           <ToggleSetting
@@ -211,7 +373,11 @@ export default function SettingsScreen() {
             title="Texto Grande"
             subtitle="Aumenta o tamanho da fonte"
             value={settings.largeText}
-            onValueChange={(value) => saveSettings({ ...settings, largeText: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('largeText', value);
+            }}
           />
           
           <ToggleSetting
@@ -219,7 +385,11 @@ export default function SettingsScreen() {
             title="Efeitos Sonoros"
             subtitle="Ativa sons de interface"
             value={settings.soundEffects}
-            onValueChange={(value) => saveSettings({ ...settings, soundEffects: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('soundEffects', value);
+            }}
           />
           
           <ToggleSetting
@@ -227,7 +397,11 @@ export default function SettingsScreen() {
             title="Vibração"
             subtitle="Feedback tátil para interações"
             value={settings.hapticFeedback}
-            onValueChange={(value) => saveSettings({ ...settings, hapticFeedback: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('hapticFeedback', value);
+            }}
           />
         </View>
 
@@ -240,7 +414,11 @@ export default function SettingsScreen() {
             title="Modo Escuro"
             subtitle="Tema escuro para melhor visualização"
             value={settings.darkMode}
-            onValueChange={(value) => saveSettings({ ...settings, darkMode: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('darkMode', value);
+            }}
           />
         </View>
 
@@ -253,7 +431,11 @@ export default function SettingsScreen() {
             title="Notificações Push"
             subtitle="Receber notificações do app"
             value={settings.notifications}
-            onValueChange={(value) => saveSettings({ ...settings, notifications: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('notifications', value);
+            }}
           />
         </View>
 
@@ -266,7 +448,11 @@ export default function SettingsScreen() {
             title="Reprodução Automática"
             subtitle="Reproduzir trailers automaticamente"
             value={settings.autoPlay}
-            onValueChange={(value) => saveSettings({ ...settings, autoPlay: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('autoPlay', value);
+            }}
           />
         </View>
 
@@ -279,7 +465,11 @@ export default function SettingsScreen() {
             title="Economia de Dados"
             subtitle="Reduz o uso de dados móveis"
             value={settings.dataSaver}
-            onValueChange={(value) => saveSettings({ ...settings, dataSaver: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('dataSaver', value);
+            }}
           />
           
           <ToggleSetting
@@ -287,7 +477,11 @@ export default function SettingsScreen() {
             title="Serviços de Localização"
             subtitle="Usar localização para recomendações"
             value={settings.locationServices}
-            onValueChange={(value) => saveSettings({ ...settings, locationServices: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('locationServices', value);
+            }}
           />
           
           <ToggleSetting
@@ -295,7 +489,11 @@ export default function SettingsScreen() {
             title="Analytics"
             subtitle="Compartilhar dados de uso para melhorias"
             value={settings.analytics}
-            onValueChange={(value) => saveSettings({ ...settings, analytics: value })}
+            onValueChange={(value) => {
+              triggerHaptic('light');
+              playSound('toggle');
+              updateSetting('analytics', value);
+            }}
           />
         </View>
 
@@ -404,160 +602,3 @@ export default function SettingsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: spacing.sm,
-    backgroundColor: 'rgba(15, 15, 35, 0.8)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-    minHeight: 80,
-  },
-  menuButton: {
-    padding: 8,
-    marginRight: 16,
-  },
-  titleContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    flexShrink: 1,
-  },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginLeft: 8,
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.md,
-    marginLeft: spacing.sm,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-  },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  destructiveIcon: {
-    backgroundColor: 'rgba(255, 85, 85, 0.1)',
-  },
-  settingText: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  destructiveText: {
-    color: '#ff5555',
-  },
-  settingSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  versionText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  logoutSection: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ff5555',
-    padding: spacing.md,
-    borderRadius: 12,
-    gap: spacing.sm,
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  bottomSpacing: {
-    height: spacing.xl,
-  },
-});

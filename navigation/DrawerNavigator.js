@@ -2,19 +2,21 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../services/supabase';
 import { useNavigation } from '@react-navigation/native';
 
 import HomeStack from './HomeStack';
 import ProfileStack from './ProfileStack';
 import ListStack from './ListStack';
-import SettingsScreen from '../screens/SettingsScreenSimple';
+import FavoritesScreen from '../screens/FavoritesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Drawer = createDrawerNavigator();
 
 // Componente personalizado para o drawer
 function CustomDrawerContent({ navigation }) {
+  const { colors, typography } = useTheme();
   const [user, setUser] = React.useState(null);
   const [avatarUrl, setAvatarUrl] = React.useState('');
 
@@ -76,6 +78,90 @@ function CustomDrawerContent({ navigation }) {
     return <Text style={styles.avatarInitials}>{initials}</Text>;
   };
 
+  // Estilos dinâmicos baseados no tema
+  const styles = StyleSheet.create({
+    drawerContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      padding: 20,
+      paddingTop: 60,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.textMuted,
+      alignItems: 'center',
+    },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+      borderWidth: 2,
+      borderColor: colors.primary,
+    },
+    avatarInitials: {
+      ...typography.h3,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 40,
+    },
+    userName: {
+      ...typography.h4,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    userEmail: {
+      ...typography.bodySmall,
+      color: colors.textSecondary,
+    },
+    menuItems: {
+      flex: 1,
+      paddingTop: 20,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.textMuted,
+    },
+    menuItemText: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: '600',
+      marginLeft: 16,
+    },
+    footer: {
+      padding: 20,
+      borderTopWidth: 1,
+      borderTopColor: colors.textMuted,
+    },
+    logoutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.error,
+    },
+    logoutText: {
+      ...typography.body,
+      color: colors.error,
+      fontWeight: 'bold',
+      marginLeft: 12,
+    },
+  });
+
   return (
     <View style={styles.drawerContainer}>
       <View style={styles.header}>
@@ -119,6 +205,28 @@ function CustomDrawerContent({ navigation }) {
           <Ionicons name="list" size={24} color={colors.primary} />
           <Text style={styles.menuItemText}>Minhas Listas</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            navigation.navigate('Favoritos');
+            navigation.closeDrawer();
+          }}
+        >
+          <Ionicons name="heart" size={24} color={colors.primary} />
+          <Text style={styles.menuItemText}>Meus Favoritos</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            navigation.navigate('Settings');
+            navigation.closeDrawer();
+          }}
+        >
+          <Ionicons name="settings" size={24} color={colors.primary} />
+          <Text style={styles.menuItemText}>Configurações</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
@@ -132,6 +240,8 @@ function CustomDrawerContent({ navigation }) {
 }
 
 export default function DrawerNavigator() {
+  const { colors } = useTheme();
+  
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -174,6 +284,14 @@ export default function DrawerNavigator() {
         }}
       />
       <Drawer.Screen 
+        name="Favoritos" 
+        component={FavoritesScreen}
+        options={{
+          headerShown: false,
+          drawerLabel: '❤️ Meus Favoritos',
+        }}
+      />
+      <Drawer.Screen 
         name="Settings" 
         component={SettingsScreen}
         options={{
@@ -184,87 +302,3 @@ export default function DrawerNavigator() {
     </Drawer.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  drawerContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    padding: 20,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#222',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  avatarInitials: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 40,
-  },
-  userName: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userEmail: {
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-  menuItems: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
-  },
-  menuItemText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 16,
-  },
-  footer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#2a1a1a',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ff5555',
-  },
-  logoutText: {
-    color: '#ff5555',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 12,
-  },
-});

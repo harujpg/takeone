@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase, getListMovieCount } from '../services/supabase';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ListCard from '../components/ListCard';
 
 export default function ListScreen({ navigation }) {
+  const { colors, typography } = useTheme();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -24,6 +25,69 @@ export default function ListScreen({ navigation }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [user, setUser] = useState(null);
+
+  // Estilos dinâmicos baseados no tema
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      paddingTop: 50,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.textMuted,
+    },
+    title: {
+      ...typography.h2,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    addButton: {
+      backgroundColor: colors.primary,
+      padding: 8,
+      borderRadius: 8,
+    },
+    listContainer: {
+      padding: 16,
+    },
+    loadingFooter: {
+      padding: 16,
+      alignItems: 'center',
+    },
+    loadingText: {
+      ...typography.bodySmall,
+      color: colors.textSecondary,
+      marginTop: 8,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 32,
+    },
+    emptyText: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    createButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    createButtonText: {
+      ...typography.body,
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
+  });
 
   useEffect(() => {
     checkUser();
@@ -189,64 +253,3 @@ export default function ListScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  addButton: {
-    backgroundColor: colors.primary,
-    padding: 8,
-    borderRadius: 8,
-  },
-  listContainer: {
-    padding: 16,
-  },
-  loadingFooter: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: colors.primary,
-    marginTop: 8,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: 18,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-  },
-  createButton: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-});

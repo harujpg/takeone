@@ -4,17 +4,224 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '../services/supabase';
-import { colors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { syncCurrentUserProfile, migrateAllUsersToProfiles } from '../services/profiles';
+import { getFavoritesCount } from '../services/favorites';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const { colors, typography } = useTheme();
+  
+  // Estilos dinâmicos baseados no tema
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: 20,
+      justifyContent: 'center',
+    },
+    title: {
+      ...typography.h2,
+      color: colors.primary,
+      marginBottom: 30,
+      textAlign: 'center',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      marginBottom: 24,
+    },
+    avatar: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+    },
+    avatarInitials: {
+      ...typography.h4,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    userInfo: {
+      flex: 1,
+    },
+    name: {
+      ...typography.h4,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    input: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      color: colors.text,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 8,
+      ...typography.body,
+    },
+    email: {
+      ...typography.bodySmall,
+      color: colors.textSecondary,
+    },
+    loadingRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 16,
+    },
+    loadingText: {
+      ...typography.bodySmall,
+      color: colors.textSecondary,
+      marginLeft: 8,
+    },
+    statsCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      padding: 16,
+      marginBottom: 24,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-evenly',
+    },
+    statBox: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    statNumber: {
+      ...typography.h3,
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    divider: {
+      width: 1,
+      height: 32,
+      backgroundColor: colors.textMuted,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 4,
+    },
+    editButton: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    editText: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    logoutButton: {
+      backgroundColor: colors.error,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+      flex: 1,
+    },
+    logoutText: {
+      ...typography.body,
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    editRow: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 4,
+    },
+    saveButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    disabledButton: {
+      opacity: 0.6,
+    },
+    saveText: {
+      ...typography.body,
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: colors.textMuted,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.textSecondary,
+    },
+    cancelText: {
+      ...typography.body,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    removeButton: {
+      backgroundColor: colors.error,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+      flex: 1,
+    },
+    removeText: {
+      ...typography.bodySmall,
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    avatarActionsRow: {
+      flexDirection: 'row',
+      marginBottom: 8,
+      gap: 8,
+    },
+    smallButton: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      alignSelf: 'flex-start',
+    },
+    smallButtonText: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+  });
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [listCount, setListCount] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
+  const [favoritesCount, setFavoritesCount] = useState(0);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -25,6 +232,26 @@ export default function ProfileScreen() {
   const [migrationExecuted, setMigrationExecuted] = useState(false);
 
 
+  // Função para carregar estatísticas do usuário
+  const loadUserStats = async () => {
+    try {
+      setStatsLoading(true);
+      
+      // Carrega contagem de favoritos
+      const favCount = await getFavoritesCount();
+      setFavoritesCount(favCount);
+      
+      // Aqui você pode adicionar outras estatísticas quando implementar
+      // const listCount = await getListsCount();
+      // const ratingCount = await getRatingsCount();
+      
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -33,6 +260,11 @@ export default function ProfileScreen() {
         if (isMounted) {
           setUser(data?.user ?? null);
           setLoading(false);
+          
+          // Carrega estatísticas se usuário estiver logado
+          if (data?.user) {
+            loadUserStats();
+          }
           
           // Executa sincronização e migração em background (não bloqueia a UI)
           if (data?.user) {
@@ -69,6 +301,15 @@ export default function ProfileScreen() {
       isMounted = false;
     };
   }, []);
+
+  // Recarrega estatísticas quando a tela ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        loadUserStats();
+      }
+    }, [user])
+  );
 
   // Gera URL assinada quando houver avatar_path
   useEffect(() => {
@@ -351,6 +592,11 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.statBox}>
+                  <Text style={styles.statNumber}>{favoritesCount}</Text>
+                  <Text style={styles.statLabel}>Favoritos</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.statBox}>
                   <Text style={styles.statNumber}>{ratingCount}</Text>
                   <Text style={styles.statLabel}>Avaliações</Text>
                 </View>
@@ -479,216 +725,3 @@ export default function ProfileScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingTop: 50, // Espaço para status bar
-    paddingHorizontal: 20,
-    minHeight: 80,
-  },
-  menuButton: {
-    padding: 8,
-    marginRight: 16,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  title: {
-    fontSize: 20,
-    color: colors.primary,
-    fontWeight: 'bold',
-    flexShrink: 1,
-  },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    opacity: 0.7,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 24,
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#222',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarInitials: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  name: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  input: {
-    backgroundColor: '#1e1e1e',
-    borderWidth: 1,
-    borderColor: '#333',
-    color: colors.text,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
-  },
-  email: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  loadingText: {
-    color: colors.text,
-    marginLeft: 8,
-  },
-  statsCard: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
-    padding: 16,
-    marginBottom: 24,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-  },
-  statBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statNumber: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    color: colors.text,
-    fontSize: 12,
-  },
-  divider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#333',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 4,
-  },
-  editButton: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: '#333',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  editText: {
-    color: colors.text,
-    fontWeight: 'bold',
-  },
-  logoutButton: {
-    backgroundColor: '#ff5555',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    flex: 1,
-  },
-  logoutText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  editRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 4,
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  saveText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#333',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  cancelText: {
-    color: colors.text,
-    fontWeight: 'bold',
-  },
-  avatarActionsRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    gap: 8,
-  },
-  smallButton: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: '#333',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  smallButtonText: {
-    color: colors.text,
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-});
